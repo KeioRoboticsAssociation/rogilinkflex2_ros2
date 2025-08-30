@@ -198,7 +198,7 @@ void CommunicationNode::initializeSerial()
 
 void CommunicationNode::serialReceiveThread()
 {
-    char buffer[4096]; // Increased buffer size
+    char buffer[8192]; // Further increased buffer size to 8192
     std::string receive_buffer;
     auto last_data_time = std::chrono::steady_clock::now();
 
@@ -403,13 +403,21 @@ void CommunicationNode::processIncomingData(const std::string& data)
             periodic_msg.request = request;
             
             for (const auto& data_item : json_data["data"]) {
-                rogilinkflex2::msg::DeviceData device_data;
-                device_data.id = static_cast<uint8_t>(data_item["id"].asInt());
-                device_data.data_type = ""; // Will be filled based on request type
-                device_data.value = data_item["value"].asDouble();
-                device_data.status = "success";
+                uint8_t device_id = static_cast<uint8_t>(data_item["id"].asInt());
                 
-                periodic_msg.data.push_back(device_data);
+                // Handle multiple data fields per device (new format with angle, speed, etc.)
+                for (auto it = data_item.begin(); it != data_item.end(); ++it) {
+                    std::string key = it.key().asString();
+                    if (key != "id") { // Skip the ID field
+                        rogilinkflex2::msg::DeviceData device_data;
+                        device_data.id = device_id;
+                        device_data.data_type = key; // angle, speed, etc.
+                        device_data.value = it->asDouble();
+                        device_data.status = "success";
+                        
+                        periodic_msg.data.push_back(device_data);
+                    }
+                }
             }
             
             // Find corresponding publisher and publish
@@ -421,6 +429,19 @@ void CommunicationNode::processIncomingData(const std::string& data)
                     break;
                 }
             }
+        } else if (type == "debug") {
+            std::string message = json_data["message"].asString();
+            RCLCPP_INFO(this->get_logger(), "[HAL DEBUG] %s", message.c_str());
+        } else if (type == "error") {
+            std::string message = json_data["message"].asString();
+            RCLCPP_ERROR(this->get_logger(), "[HAL ERROR] %s", message.c_str());
+        } else if (type == "configuration_ack") {
+            int periodic_requests_count = json_data.get("periodic_requests_count", 0).asInt();
+            std::string status = json_data.get("status", "unknown").asString();
+            RCLCPP_INFO(this->get_logger(), "HAL configuration acknowledged - %d periodic requests, status: %s", 
+                       periodic_requests_count, status.c_str());
+        } else {
+            RCLCPP_WARN(this->get_logger(), "Unknown message type received: %s", type.c_str());
         }
     } catch (const std::exception& e) {
         RCLCPP_ERROR(this->get_logger(), "Error processing incoming data: %s", e.what());
