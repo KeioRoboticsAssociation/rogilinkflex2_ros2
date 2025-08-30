@@ -1,0 +1,19 @@
+device_mapping:
+  test_motor_1: 0
+  test_motor_2: 1
+  test_sensor_1: 2
+
+periodic_requests:
+  - request: "motor_angle_speed"
+    instance_ids: [0, 1]
+    data_names: ["angle", "speed"]
+    data_types: ["float", "float"]
+    interval_ms: 1000
+    topic_name: "/motor/angle_speed"
+    
+  - request: "sensor_data"
+    instance_ids: [2]
+    data_names: ["temperature"]
+    data_types: ["float"]
+    interval_ms: 2000
+    topic_name: "/sensor/temperature"

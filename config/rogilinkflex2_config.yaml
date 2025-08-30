@@ -1,0 +1,29 @@
+device_mapping:
+  dynamixel_1: 0
+  dynamixel_2: 1
+  robomaster_1: 2
+  temp_sensor_1: 3
+  encoder_left: 4
+  encoder_right: 5
+
+periodic_requests:
+  - request: "motor_angle_speed"
+    instance_ids: [0, 1, 2]
+    data_names: ["angle", "speed"]
+    data_types: ["float", "float"]
+    interval_ms: 500
+    topic_name: "/motor/angle_speed"
+    
+  - request: "sensor_temperature"
+    instance_ids: [3]
+    data_names: ["temperature"]
+    data_types: ["float"]
+    interval_ms: 1000
+    topic_name: "/sensors/temperature"
+    
+  - request: "encoder_position"
+    instance_ids: [4, 5]
+    data_names: ["position", "velocity"]
+    data_types: ["int32", "float"]
+    interval_ms: 100
+    topic_name: "/encoders/state"
