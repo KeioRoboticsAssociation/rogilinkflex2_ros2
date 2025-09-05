@@ -29,8 +29,8 @@ rosidl_generate_interfaces(${PROJECT_NAME}
 include_directories(include)
 
 # Add executables
-add_executable(${PROJECT_NAME}_node src/main.cpp src/communication_node.cpp)
-add_executable(${PROJECT_NAME}_test_node src/test_node.cpp)
+add_executable(${PROJECT_NAME}_node src/main.cpp src/communication_node.cpp src/float_hex_converter.cpp)
+add_executable(${PROJECT_NAME}_test_node src/test_node.cpp src/float_hex_converter.cpp)
 
 # Add dependencies
 ament_target_dependencies(${PROJECT_NAME}_node

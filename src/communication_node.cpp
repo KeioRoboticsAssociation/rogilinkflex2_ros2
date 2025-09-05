@@ -1,4 +1,5 @@
 #include "rogilinkflex2/communication_node.hpp"
+#include "rogilinkflex2/float_hex_converter.hpp"
 #include <fcntl.h>
 #include <termios.h>
 #include <unistd.h>
@@ -390,7 +391,19 @@ void CommunicationNode::processIncomingData(const std::string& data)
             
             latest_read_response_.id = static_cast<uint8_t>(json_data["id"].asInt());
             latest_read_response_.data_type = json_data["data_type"].asString();
-            latest_read_response_.value = json_data["value"].asDouble();
+            
+            // Handle hex float values
+            if (json_data["value"].isString()) {
+                std::string value_str = json_data["value"].asString();
+                if (isHexFloatString(value_str)) {
+                    latest_read_response_.value = hexStringToFloat(value_str);
+                } else {
+                    latest_read_response_.value = std::stod(value_str);
+                }
+            } else {
+                latest_read_response_.value = json_data["value"].asDouble();
+            }
+            
             latest_read_response_.status = json_data["status"].asString();
             
             read_response_received_ = true;
@@ -412,7 +425,19 @@ void CommunicationNode::processIncomingData(const std::string& data)
                         rogilinkflex2::msg::DeviceData device_data;
                         device_data.id = device_id;
                         device_data.data_type = key; // angle, speed, etc.
-                        device_data.value = it->asDouble();
+                        
+                        // Handle hex float values
+                        if (it->isString()) {
+                            std::string value_str = it->asString();
+                            if (isHexFloatString(value_str)) {
+                                device_data.value = hexStringToFloat(value_str);
+                            } else {
+                                device_data.value = std::stod(value_str);
+                            }
+                        } else {
+                            device_data.value = it->asDouble();
+                        }
+                        
                         device_data.status = "success";
                         
                         periodic_msg.data.push_back(device_data);
